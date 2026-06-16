@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Consumos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <!-- Chart.js para gráficos elegantes -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar glass-panel">
+            <div class="logo">
+                <i class='bx bxs-car-garage'></i>
+                <h2>FleetManage</h2>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#dashboard" class="active" data-view="dashboard"><i class='bx bxs-dashboard'></i> Dashboard</a></li>
+                <li><a href="#veiculos" data-view="veiculos"><i class='bx bxs-car'></i> Veículos</a></li>
+                <li><a href="#viagens" data-view="viagens"><i class='bx bx-trip'></i> Viagens / Consumos</a></li>
+                <li><a href="#logs" data-view="logs"><i class='bx bx-list-ol'></i> Logs</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="top-header glass-panel">
+                <h1 id="page-title">Dashboard</h1>
+                <div class="user-info">
+                    <span>Raspberry Pi Server</span>
+                    <div class="status-indicator online"></div>
+                </div>
+            </header>
+
+            <!-- Views Container -->
+            <div id="views-container" class="views-container">
+                
+                <!-- Dashboard View -->
+                <section id="view-dashboard" class="view active-view">
+                    
+                    <h2 style="margin-bottom: 15px; font-size: 1.2rem; color: var(--text-color);">Visão Global da Frota</h2>
+                    <div class="metrics-grid" style="margin-bottom: 25px;">
+                        <div class="metric-card glass-panel">
+                            <div class="metric-icon" style="background: rgba(59, 130, 246, 0.2); color: var(--primary-color);"><i class='bx bx-car'></i></div>
+                            <div class="metric-info">
+                                <h3>Total Veículos</h3>
+                                <p id="dash-total-veiculos">--</p>
+                            </div>
+                        </div>
+                        <div class="metric-card glass-panel">
+                            <div class="metric-icon" style="background: rgba(16, 185, 129, 0.2); color: var(--success-color);"><i class='bx bx-trip'></i></div>
+                            <div class="metric-info">
+                                <h3>Viagens Registadas</h3>
+                                <p id="dash-total-viagens">--</p>
+                            </div>
+                        </div>
+                        <div class="metric-card glass-panel">
+                            <div class="metric-icon" style="background: rgba(239, 68, 68, 0.2); color: var(--danger-color);"><i class='bx bx-euro'></i></div>
+                            <div class="metric-info">
+                                <h3>Custo Global</h3>
+                                <p id="dash-custo-global">-- €</p>
+                            </div>
+                        </div>
+                        <div class="metric-card glass-panel">
+                            <div class="metric-icon" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b;"><i class='bx bx-trending-up'></i></div>
+                            <div class="metric-info">
+                                <h3>Distância Global</h3>
+                                <p id="dash-distancia-global">-- km</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-container" style="margin-bottom: 30px;">
+                        <div class="chart-box glass-panel">
+                            <h3>Viagens Registadas (Últimos 30 Dias)</h3>
+                            <div style="height: 250px;">
+                                <canvas id="chart-dash-viagens"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-box glass-panel">
+                            <h3>Distribuição de Veículos</h3>
+                            <div style="height: 250px;">
+                                <canvas id="chart-dash-tipos"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h2 style="margin-bottom: 15px; font-size: 1.2rem; color: var(--text-color);">Saúde da Plataforma & API</h2>
+                    <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 25px;">
+                        <div class="metric-card glass-panel">
+                            <div class="metric-icon" style="background: rgba(139, 92, 246, 0.2); color: #8b5cf6;"><i class='bx bx-server'></i></div>
+                            <div class="metric-info">
+                                <h3>Pedidos Hoje</h3>
+                                <p id="dash-pedidos-hoje">--</p>
+                            </div>
+                        </div>
+                        <div class="metric-card glass-panel">
+                            <div class="metric-icon" style="background: rgba(139, 92, 246, 0.2); color: #8b5cf6;"><i class='bx bx-timer'></i></div>
+                            <div class="metric-info">
+                                <h3>Latência Média</h3>
+                                <p id="dash-latencia-media">-- ms</p>
+                            </div>
+                        </div>
+                        <div class="metric-card glass-panel">
+                            <div class="metric-icon" style="background: rgba(239, 68, 68, 0.2); color: var(--danger-color);"><i class='bx bx-error-alt'></i></div>
+                            <div class="metric-info">
+                                <h3>Taxa Erros (7d)</h3>
+                                <p id="dash-taxa-erros">-- %</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel" style="padding: 20px;">
+                        <h3 style="margin-bottom: 15px; font-size: 1rem; color: var(--text-color);">Top 5 Endpoints Mais Acedidos</h3>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;" id="tabela-top-endpoints">
+                            <thead>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left;">
+                                    <th style="padding: 8px;">Método</th>
+                                    <th style="padding: 8px;">Endpoint</th>
+                                    <th style="padding: 8px;">Acessos</th>
+                                    <th style="padding: 8px;">Latência Média</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Endpoints injetados pelo JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Veículos View -->
+                <section id="view-veiculos" class="view">
+                    <div class="action-bar">
+                        <button class="btn btn-primary" onclick="app.showModal('modal-veiculo')"><i class='bx bx-plus'></i> Novo Veículo</button>
+                    </div>
+                    <div class="table-container glass-panel">
+                        <table id="tabela-veiculos">
+                            <thead>
+                                <tr>
+                                    <th>Matrícula</th>
+                                    <th>Nome</th>
+                                    <th>Combustível</th>
+                                    <th>Tipo</th>
+                                    <th>Km (Iniciais / Atuais)</th>
+                                    <th>Data Registo</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Veículos renderizados aqui -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Viagens View -->
+                <section id="view-viagens" class="view">
+                    <div class="action-bar" style="display: flex; gap: 15px;">
+                        <select id="select-veiculo-viagens" class="input-field" style="width: 250px;">
+                            <option value="">Selecione um veículo...</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="app.showModal('modal-viagem')" id="btn-nova-viagem" disabled><i class='bx bx-plus'></i> Registar Abastecimento</button>
+                    </div>
+                    <div class="table-container glass-panel mt-20">
+                        <table id="tabela-viagens">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Km Totais</th>
+                                    <th>Distância (km)</th>
+                                    <th>Litros</th>
+                                    <th>Valor (€)</th>
+                                    <th>Consumo (L/100km)</th>
+                                    <th>Custo/km (€)</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Viagens renderizados aqui -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Detalhes do Veículo View -->
+                <section id="view-detalhes" class="view">
+                    <div class="action-bar" style="justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <div style="display: flex; gap: 15px; align-items: center;">
+                            <button class="btn btn-secondary" onclick="app.navigate('veiculos')"><i class='bx bx-arrow-back'></i> Voltar</button>
+                            <h2 id="detalhes-titulo">Detalhes do Veículo</h2>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <div id="active-comparisons" style="display: flex; gap: 5px;"></div>
+                            <button class="btn btn-primary" onclick="app.showModal('modal-comparacao')"><i class='bx bx-git-compare'></i> Comparar</button>
+                        </div>
+                    </div>
+                    
+                    <div id="detalhes-veiculo-info" style="color: var(--text-muted); font-size: 0.95rem; margin-top: -15px; margin-bottom: 20px;">
+                        <span id="info-combustivel"><i class='bx bx-gas-pump'></i> --</span> &nbsp;•&nbsp; 
+                        <span id="info-km"><i class='bx bx-tachometer'></i> -- km atuais</span>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
+                        <select id="kpi-period-select" class="input-field" style="width: auto; height: 35px; font-size: 0.9rem; margin: 0; padding: 5px 10px;" onchange="app.updateKpiDisplay()">
+                            <option value="30d">Últimos 30 Dias</option>
+                            <option value="all">Todo o Tempo</option>
+                        </select>
+                    </div>
+
+                    <!-- KPIs -->
+                    <div class="metrics-grid">
+                        <div class="metric-card glass-panel">
+                            <div class="metric-icon" style="background: rgba(16, 185, 129, 0.2); color: var(--success-color);"><i class='bx bx-trending-up'></i></div>
+                            <div class="metric-info">
+                                <h3 id="kpi-distancia-title">Distância (30d)</h3>
+                                <p id="kpi-distancia">-- km</p>
+                                <div id="kpi-distancia-comparacao-container">
+                                    <span id="kpi-distancia-comparacao" class="trend-badge">--</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="metric-card glass-panel">
+                            <div class="metric-icon" style="background: rgba(239, 68, 68, 0.2); color: var(--danger-color);"><i class='bx bx-euro'></i></div>
+                            <div class="metric-info">
+                                <h3 id="kpi-custo-title">Total Gasto (30d)</h3>
+                                <p id="kpi-custo">-- €</p>
+                                <div id="kpi-custo-comparacao-container">
+                                    <span id="kpi-custo-comparacao" class="trend-badge">--</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="metric-card glass-panel">
+                            <div class="metric-icon" style="background: rgba(59, 130, 246, 0.2); color: var(--primary-color);"><i class='bx bx-gas-pump'></i></div>
+                            <div class="metric-info">
+                                <h3 id="kpi-consumo-title">Consumo Médio (30d)</h3>
+                                <p id="kpi-consumo">-- L/100km</p>
+                                <div id="kpi-consumo-comparacao-container">
+                                    <span id="kpi-consumo-comparacao" class="trend-badge">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Previsoes Area -->
+                    <div id="previsoes-container" class="glass-panel" style="margin-top: 10px; margin-bottom: 25px; padding: 15px 20px; display: flex; align-items: center; gap: 20px; background: rgba(139, 92, 246, 0.05); border-left: 4px solid #8b5cf6;">
+                        <div style="font-size: 1.8rem; color: #8b5cf6;"><i class='bx bx-bulb'></i></div>
+                        <div>
+                            <h3 style="margin-bottom: 5px; font-size: 1rem; color: var(--text-color);">Previsões para os próximos 30 dias</h3>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">
+                                Baseado na média de utilização dos últimos 3 meses, prevê-se que percorra cerca de <strong id="prev-dist" style="color: var(--text-color);">-- km</strong> 
+                                com um custo estimado de <strong id="prev-custo" style="color: var(--text-color);">-- €</strong>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Charts Area -->
+                    <div class="charts-container">
+                        <div class="chart-box glass-panel">
+                            <h3>Evolução de Consumo (L/100km)</h3>
+                            <div class="canvas-wrapper">
+                                <canvas id="chart-consumo"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-box glass-panel">
+                            <h3>Evolução do Custo por Km (€/km)</h3>
+                            <div class="canvas-wrapper">
+                                <canvas id="chart-custo"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    </div>
+                </section>
+
+                <!-- Logs View -->
+                <section id="view-logs" class="view">
+                    <div class="table-container glass-panel">
+                        <table id="tabela-logs">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Método</th>
+                                    <th>URL</th>
+                                    <th>Status</th>
+                                    <th>Latência (ms)</th>
+                                    <th>IP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Logs renderizados aqui -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Modal Novo Veículo -->
+    <div id="modal-veiculo" class="modal-overlay">
+        <div class="modal glass-panel">
+            <div class="modal-header">
+                <h2>Registar Veículo</h2>
+                <button class="btn-close" onclick="app.closeModal('modal-veiculo')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-veiculo" onsubmit="app.submitVeiculo(event)">
+                    <div class="form-group">
+                        <label>Matrícula (Ex: AA-00-AA)</label>
+                        <input type="text" id="v-matricula" class="input-field" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nome do Veículo</label>
+                        <input type="text" id="v-nome" class="input-field" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Quilómetros Iniciais</label>
+                        <input type="number" step="0.01" id="v-km" class="input-field" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Combustível</label>
+                            <select id="v-combustivel" class="input-field">
+                                <option value="Gasóleo">Gasóleo</option>
+                                <option value="Gasolina">Gasolina</option>
+                                <option value="GPL">GPL</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="v-tipo" class="input-field">
+                                <option value="Ligeiro">Ligeiro</option>
+                                <option value="Comercial">Comercial</option>
+                                <option value="Pesado">Pesado</option>
+                                <option value="Motociclo">Motociclo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-veiculo')">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Veículo -->
+    <div id="modal-edit-veiculo" class="modal-overlay">
+        <div class="modal glass-panel">
+            <div class="modal-header">
+                <h2>Editar Veículo</h2>
+                <button class="btn-close" onclick="app.closeModal('modal-edit-veiculo')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-edit-veiculo" onsubmit="app.submitEditVeiculo(event)">
+                    <input type="hidden" id="edit-v-original-matricula">
+                    <div class="form-group">
+                        <label>Matrícula (Não editável)</label>
+                        <input type="text" id="edit-v-matricula" class="input-field" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Nome do Veículo</label>
+                        <input type="text" id="edit-v-nome" class="input-field" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Combustível</label>
+                            <select id="edit-v-combustivel" class="input-field">
+                                <option value="Gasóleo">Gasóleo</option>
+                                <option value="Gasolina">Gasolina</option>
+                                <option value="GPL">GPL</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="edit-v-tipo" class="input-field">
+                                <option value="Ligeiro">Ligeiro</option>
+                                <option value="Comercial">Comercial</option>
+                                <option value="Pesado">Pesado</option>
+                                <option value="Motociclo">Motociclo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-edit-veiculo')">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Atualizar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nova Viagem -->
+    <div id="modal-viagem" class="modal-overlay">
+        <div class="modal glass-panel">
+            <div class="modal-header">
+                <h2>Registar Abastecimento/Viagem</h2>
+                <button class="btn-close" onclick="app.closeModal('modal-viagem')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-viagem" onsubmit="app.submitViagem(event)">
+                    <div class="form-group">
+                        <label>Veículo (Matrícula)</label>
+                        <input type="text" id="vi-matricula" class="input-field" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Quilómetros Totais do Veículo (Atual)</label>
+                        <input type="number" step="0.1" id="vi-km-totais" class="input-field" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Litros Abastecidos</label>
+                            <input type="number" step="0.01" id="vi-litros" class="input-field" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor Total (€)</label>
+                            <input type="number" step="0.01" id="vi-valor" class="input-field" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de Abastecimento</label>
+                        <select id="vi-tipo" class="input-field">
+                            <option value="Completo">Depósito Cheio</option>
+                            <option value="Parcial">Parcial</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Descrição (Opcional)</label>
+                        <input type="text" id="vi-descricao" class="input-field">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-viagem')">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Registar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Viagem -->
+    <div id="modal-edit-viagem" class="modal-overlay">
+        <div class="modal glass-panel">
+            <div class="modal-header">
+                <h2>Editar Viagem/Abastecimento</h2>
+                <button class="btn-close" onclick="app.closeModal('modal-edit-viagem')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-edit-viagem" onsubmit="app.submitEditViagem(event)">
+                    <input type="hidden" id="edit-vi-id">
+                    <div class="form-group">
+                        <label>Veículo (Matrícula)</label>
+                        <input type="text" id="edit-vi-matricula" class="input-field" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Quilómetros Totais (Não editável)</label>
+                        <input type="number" step="0.1" id="edit-vi-km-totais" class="input-field" disabled>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Litros Abastecidos</label>
+                            <input type="number" step="0.01" id="edit-vi-litros" class="input-field" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor Total (€)</label>
+                            <input type="number" step="0.01" id="edit-vi-valor" class="input-field" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de Abastecimento</label>
+                        <select id="edit-vi-tipo" class="input-field">
+                            <option value="Completo">Depósito Cheio</option>
+                            <option value="Parcial">Parcial</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Descrição (Opcional)</label>
+                        <input type="text" id="edit-vi-descricao" class="input-field">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-edit-viagem')">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Atualizar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Comparação -->
+    <div id="modal-comparacao" class="modal-overlay">
+        <div class="modal glass-panel">
+            <div class="modal-header">
+                <h2>Definições de Comparação</h2>
+                <button class="btn-close" onclick="app.closeModal('modal-comparacao')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-comparacao" onsubmit="app.aplicarComparacao(event)">
+                    <div class="form-group">
+                        <label>Veículos Adicionais a Comparar</label>
+                        <select id="comp-veiculos" class="input-field" multiple style="height: 120px; padding: 5px;">
+                            <!-- Opções preenchidas dinamicamente -->
+                        </select>
+                        <small style="color: var(--text-muted); display: block; margin-top: 5px;">Use Ctrl ou Cmd para selecionar vários (ou nenhum para limpar).</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label style="margin-bottom: 8px; display: block;">Período (Intervalo)</label>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="app.setCompPeriodo(7)">7 Dias</button>
+                            <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="app.setCompPeriodo(30)">30 Dias</button>
+                            <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="app.setCompPeriodo(365)">1 Ano</button>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Início</label>
+                                <input type="date" id="comp-data-inicio" class="input-field" required>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Fim</label>
+                                <input type="date" id="comp-data-fim" class="input-field" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="app.limparComparacao()">Limpar Comparação</button>
+                        <button type="submit" class="btn btn-primary">Aplicar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast glass-panel hidden">
+        <span id="toast-msg">Mensagem</span>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
